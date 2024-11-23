@@ -1,1 +1,9 @@
-package server
+package main
+
+import (
+	
+)
+
+func main() {
+
+}

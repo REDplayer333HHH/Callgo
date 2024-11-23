@@ -1,19 +1,21 @@
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-camera',
   standalone: true,
-  imports: [],
+  imports: [FormsModule, CommonModule],
   templateUrl: './camera.component.html',
   styleUrl: './camera.component.css'
 })
 export class CameraComponent implements OnInit {
 
+	ngOnInit() {}
+
 	constructor() {}
 
-	ngOnInit() {
-
-	}
+	// camera
 
 	camIsOn = false;
 
