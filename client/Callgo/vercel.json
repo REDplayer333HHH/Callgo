@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://vi-cyber-api.vercel.app/api/:path*"
+        }
+    ]
+}
