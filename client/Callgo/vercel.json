@@ -1,8 +1,23 @@
 {
-    "rewrites": [
-        {
-            "source": "/api/:path*",
-            "destination": "https://vi-cyber-api.vercel.app/api/:path*"
+    "version": 2,
+    "builds": [
+      {
+        "src": "package.json",
+        "use": "@vercel/node"
+      },
+      {
+        "src": "src/main.ts",
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "dist/Callgo"
         }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "/index.html"
+      }
     ]
-}
+  }
+  
