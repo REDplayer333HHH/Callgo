@@ -1,15 +1,11 @@
 <div id="videos">
     <video #videoElement autoplay playsinline></video>
-    <img id="reconstructedFrame" *ngIf="reconstructedFrames.length > 0" />  
+    <img id="reconstructedFrame" style="height: 80%; margin-top: 5vh;"/>  
 </div>
 
 <div id="controls">
     <button class="iobutton" (click)="camera(videoElement)">
         <img style="width: 100%; margin-left: 3%;" src="assets/images/camera-icon.png">
-    </button>
-
-    <button class="iobutton" (click)="reconstructVideo()">
-        <img style="width: 70%;" src="assets/images/camera-icon.png" />
     </button>
 
     <!-- TODO: mic -->

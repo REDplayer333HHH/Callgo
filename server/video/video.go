@@ -2,7 +2,7 @@ package video
 
 import (
 	"encoding/json"
-	"log"
+	// "log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,10 +15,12 @@ func HandleVideo(router *mux.Router) {
 }
 
 type VideoData struct {
+	ID uint `json:"ID"`
 	Data string `json:"video"`
 }
 
-var videoBuffer = []string{}
+// var videoBuffer = []VideoData{}
+var videoBuffer = VideoData{}
 
 func postVideo(w http.ResponseWriter, r *http.Request) {
 	var videoData VideoData
@@ -28,8 +30,8 @@ func postVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(string(videoData.Data))
-	videoBuffer = append(videoBuffer, videoData.Data)
+	// videoBuffer = append(videoBuffer, videoData)
+	videoBuffer = videoData
 
 	w.WriteHeader(http.StatusCreated)
 } 
@@ -37,5 +39,5 @@ func postVideo(w http.ResponseWriter, r *http.Request) {
 func getVideo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(videoBuffer)
-	videoBuffer = []string{}
+	// videoBuffer = []VideoData{}
 }

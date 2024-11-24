@@ -15,102 +15,85 @@ export class CameraComponent implements OnInit {
 
 	ngOnInit() {
 		this.canvas = document.createElement('canvas'); // Hidden canvas for capturing video frames
+		this.displayImage = document.getElementById('reconstructedFrame') as HTMLImageElement;
 	}
 
   	camIsOn = false;
   	videoElement!: HTMLVideoElement;
-
-	timer: any;
 	canvas!: HTMLCanvasElement;
-	postVideoBuffer: string[] = [];
+	displayImage!: HTMLImageElement;
 
-	reconstructedFrames: string[] = [];
-	frameInterval: any;
+	delay: number = 1
 
   	// Toggle camera on/off
-	camera(videoElement: HTMLVideoElement): void {
+	async camera(videoElement: HTMLVideoElement): Promise<void> {
     	this.videoElement = videoElement;
 
-    	navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-			.then((stream) => {
-				if (this.camIsOn) {
-					videoElement.srcObject = null;
-					this.camIsOn = false;
-					this.stopSending();
-				} else {
-					this.camIsOn = true;
-					videoElement.srcObject = stream;
-					videoElement.play();
-					this.startSending();
+    	try {
+			const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
+			if (this.camIsOn) {
+				// Turn off
+				this.camIsOn = false;
+				this.videoElement.srcObject = null;
+				this.displayImage.style.display = "none";
+			} else {
+				// Turn on
+				this.camIsOn = true;
+				this.displayImage.style.display = "block";
+				this.videoElement.srcObject = stream;
+				this.videoElement.play();
+				while(this.camIsOn) {
+					await this.send(stream);
+					await this.receive();
+					await this.sleep(this.delay);
 				}
-			})
-			.catch((err) => {
-				console.error('Error accessing the camera', err);
-			});
+			}
+		} catch (err) {
+			console.error('Error accessing the camera', err);
+		}
   	}
 
 	// Start capturing and sending video data
-	startSending(): void {
-		this.timer = setInterval(() => {
-		if (this.videoElement) {
-			// Capture current frame as a base64 string
-			this.canvas.width = this.videoElement.videoWidth;
-			this.canvas.height = this.videoElement.videoHeight;
-			const context = this.canvas.getContext('2d');
-			context?.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+	async send(stream: MediaStream): Promise<void> {
+		// Capture current frame as a base64 string
+		this.canvas.width = this.videoElement.videoWidth;
+		this.canvas.height = this.videoElement.videoHeight;
+		const context = this.canvas.getContext('2d');
+		context?.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
 
-			const frame = this.canvas.toDataURL('image/jpeg'); // Capture frame as Base64
-			this.postVideoBuffer.push(frame);
+		const frame = this.canvas.toDataURL('image/jpeg'); // Capture frame as Base64
 
-			// Send the buffered frames to the backend
-			if (this.postVideoBuffer.length > 0) {
-				this.apiService.postVideo('video', { video: this.postVideoBuffer.join('') }).subscribe({
-					next: (response) => console.log('Video chunk uploaded:', response),
-					error: (error) => console.error('Error uploading video chunk:', error),
-				});
-
-				// Clear buffer after sending
-				this.postVideoBuffer = [];
-			}
-		}
-		}, 2000); // Capture and send every 2 seconds
-	}
-
-	// Stop capturing and sending video data
-	stopSending(): void {
-		if (this.timer) {
-			clearInterval(this.timer);
-			this.timer = null;
+		try {
+			let id = this.generateID()
+			await this.apiService.postVideo('video', { ID: id, video: frame }).toPromise();
+		} catch (error) {
+			console.error('Error uploading video chunk:', error);
 		}
 	}
 
-	reconstructVideo(): void {
-		this.apiService.getVideo('video').subscribe({
-			next: (frames: string[]) => {
-			this.reconstructedFrames = frames;
-			this.displayReconstructedVideo();
-			},
-			error: (error) => console.error('Error fetching video:', error),
-		});
-	}
-
-	displayReconstructedVideo(): void {
-		let frameIndex = 0;
-	
-		// Play the frames as a video using an interval
-		this.frameInterval = setInterval(() => {
-			const frameImage = document.getElementById('reconstructedFrame') as HTMLImageElement;
-			if (frameImage && this.reconstructedFrames.length > 0) {
-				frameImage.src = this.reconstructedFrames[frameIndex];
-				frameIndex = (frameIndex + 1) % this.reconstructedFrames.length; // Loop through frames
-			}
-		}, 100); // 10 FPS
-	}
-
-	stopReconstructedVideo(): void {
-		if (this.frameInterval) {
-			clearInterval(this.frameInterval);
-			this.frameInterval = null;
+	async receive(): Promise<void> {
+		try {
+			const frameAndID: any = await this.apiService.getVideo('video').toPromise();
+			this.displayImage.src = frameAndID.video;
+		} catch (error) {
+			console.error('Error during video reception:', error);
 		}
+	}
+
+	sleep(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	existingIDs: number[] = [];
+	nextId = 1;
+	generateID() {
+		this.existingIDs.push(this.nextId);
+		let id = this.nextId;
+		this.nextId++;
+		return id;
 	}
 }
+
+
+
